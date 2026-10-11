@@ -1,4 +1,6 @@
-package es.bluesolution.railway_framework.framework.functional_framework;
+package es.bluesolution.rop.spring;
+
+import es.bluesolution.rop.core.FailureResultDescription;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

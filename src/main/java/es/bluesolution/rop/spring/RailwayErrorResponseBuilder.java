@@ -1,4 +1,7 @@
-package es.bluesolution.railway_framework.framework.functional_framework;
+package es.bluesolution.rop.spring;
+
+import es.bluesolution.rop.core.FailureResultDescription;
+import es.bluesolution.rop.core.Result;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

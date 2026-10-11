@@ -82,6 +82,16 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
         </dependency>
+        <!-- RopAutoConfiguration (registered via AutoConfiguration.imports). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- Optional: present in the consumer app; the library must not force them. -->
         <dependency>
             <groupId>org.springframework</groupId>

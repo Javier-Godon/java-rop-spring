@@ -1,4 +1,4 @@
-package es.bluesolution.railway_framework.framework.functional_framework;
+package es.bluesolution.rop.spring;
 
 /**
  * Configuration for error response formatting in Railway-Oriented Programming.

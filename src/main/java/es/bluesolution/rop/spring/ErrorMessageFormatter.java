@@ -1,20 +1,19 @@
-package es.bluesolution.railway_framework.framework.functional_framework;
+package es.bluesolution.rop.spring;
 
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import es.bluesolution.rop.core.FailureResultDescription;
+
 
 /**
  * Formats error messages for HTTP responses based on the configured error response mode.
  * Handles security considerations by hiding sensitive information in production.
+ *
+ * <p>Registered as a bean by {@code RopAutoConfiguration}.</p>
  */
-@Component
 public class ErrorMessageFormatter {
 
     private final ErrorResponseMode mode;
 
-    public ErrorMessageFormatter(
-        @Value("${railway.error.response.mode:PRODUCTION}") String errorMode
-    ) {
+    public ErrorMessageFormatter(String errorMode) {
         this.mode = ErrorResponseMode.valueOf(errorMode.toUpperCase());
     }
 

@@ -1,4 +1,7 @@
-package es.bluesolution.railway_framework.framework.functional_framework;
+package es.bluesolution.rop.spring;
+
+import es.bluesolution.rop.core.FailureResultDescription;
+import es.bluesolution.rop.core.Result;
 
 /**
  * Utility methods for creating Result failures in Railway-Oriented Programming.

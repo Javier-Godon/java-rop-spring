@@ -7,24 +7,11 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.HttpMediaTypeNotAcceptableException;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerErrorException;
 import org.springframework.web.server.ServerWebInputException;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.ws.rs.NotFoundException;
 
 import java.io.EOFException;
 import java.io.FileNotFoundException;
@@ -77,35 +64,35 @@ public final class HttpStatusMapper {
 
         // ---- Spring Web/MVC: Validation errors (400 Bad Request) ----
         EXCEPTION_TO_STATUS_MAP.put(HttpMessageNotReadableException.class, HttpStatus.BAD_REQUEST);
-        EXCEPTION_TO_STATUS_MAP.put(MissingServletRequestParameterException.class, HttpStatus.BAD_REQUEST);
-        EXCEPTION_TO_STATUS_MAP.put(MissingRequestHeaderException.class, HttpStatus.BAD_REQUEST);
-        EXCEPTION_TO_STATUS_MAP.put(ServletRequestBindingException.class, HttpStatus.BAD_REQUEST);
+        putIfPresent("org.springframework.web.bind.MissingServletRequestParameterException", HttpStatus.BAD_REQUEST);
+        putIfPresent("org.springframework.web.bind.MissingRequestHeaderException", HttpStatus.BAD_REQUEST);
+        putIfPresent("org.springframework.web.bind.ServletRequestBindingException", HttpStatus.BAD_REQUEST);
 
         // ---- Spring Web/MVC: Validation errors (422 Unprocessable Entity) ----
         EXCEPTION_TO_STATUS_MAP.put(MethodArgumentNotValidException.class, HttpStatus.valueOf(422));
-        EXCEPTION_TO_STATUS_MAP.put(ConstraintViolationException.class, HttpStatus.valueOf(422));
+        putIfPresent("jakarta.validation.ConstraintViolationException", HttpStatus.valueOf(422));
 
         // ---- Spring Web/MVC: Not found (404) ----
-        EXCEPTION_TO_STATUS_MAP.put(NoHandlerFoundException.class, HttpStatus.NOT_FOUND);
+        putIfPresent("org.springframework.web.servlet.NoHandlerFoundException", HttpStatus.NOT_FOUND);
 
         // ---- Spring Web/MVC: Method not allowed (405) ----
-        EXCEPTION_TO_STATUS_MAP.put(HttpRequestMethodNotSupportedException.class, HttpStatus.METHOD_NOT_ALLOWED);
+        putIfPresent("org.springframework.web.HttpRequestMethodNotSupportedException", HttpStatus.METHOD_NOT_ALLOWED);
 
         // ---- Spring Web/MVC: Media type issues ----
-        EXCEPTION_TO_STATUS_MAP.put(HttpMediaTypeNotAcceptableException.class, HttpStatus.NOT_ACCEPTABLE);
-        EXCEPTION_TO_STATUS_MAP.put(HttpMediaTypeNotSupportedException.class, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        putIfPresent("org.springframework.web.HttpMediaTypeNotAcceptableException", HttpStatus.NOT_ACCEPTABLE);
+        putIfPresent("org.springframework.web.HttpMediaTypeNotSupportedException", HttpStatus.UNSUPPORTED_MEDIA_TYPE);
 
         // ---- Spring WebFlux ----
         EXCEPTION_TO_STATUS_MAP.put(ServerWebInputException.class, HttpStatus.BAD_REQUEST);
         EXCEPTION_TO_STATUS_MAP.put(ServerErrorException.class, HttpStatus.INTERNAL_SERVER_ERROR);
 
         // ---- Spring Security ----
-        EXCEPTION_TO_STATUS_MAP.put(AuthenticationException.class, HttpStatus.UNAUTHORIZED);
-        EXCEPTION_TO_STATUS_MAP.put(BadCredentialsException.class, HttpStatus.UNAUTHORIZED);
-        EXCEPTION_TO_STATUS_MAP.put(AccessDeniedException.class, HttpStatus.FORBIDDEN);
+        putIfPresent("org.springframework.security.core.AuthenticationException", HttpStatus.UNAUTHORIZED);
+        putIfPresent("org.springframework.security.authentication.BadCredentialsException", HttpStatus.UNAUTHORIZED);
+        putIfPresent("org.springframework.security.access.AccessDeniedException", HttpStatus.FORBIDDEN);
 
         // ---- JPA/Hibernate: Not found ----
-        EXCEPTION_TO_STATUS_MAP.put(EntityNotFoundException.class, HttpStatus.NOT_FOUND);
+        putIfPresent("jakarta.persistence.EntityNotFoundException", HttpStatus.NOT_FOUND);
         EXCEPTION_TO_STATUS_MAP.put(EmptyResultDataAccessException.class, HttpStatus.NOT_FOUND);
 
         // ---- JPA/Hibernate: Conflict ----
@@ -113,12 +100,29 @@ public final class HttpStatusMapper {
         EXCEPTION_TO_STATUS_MAP.put(DuplicateKeyException.class, HttpStatus.CONFLICT);
 
         // ---- JAX-RS ----
-        EXCEPTION_TO_STATUS_MAP.put(NotFoundException.class, HttpStatus.NOT_FOUND);
+        putIfPresent("jakarta.ws.rs.NotFoundException", HttpStatus.NOT_FOUND);
 
         // ---- Top-level fallbacks (should be last due to inheritance hierarchy) ----
         EXCEPTION_TO_STATUS_MAP.put(RuntimeException.class, HttpStatus.INTERNAL_SERVER_ERROR);
         EXCEPTION_TO_STATUS_MAP.put(Exception.class, HttpStatus.INTERNAL_SERVER_ERROR);
         EXCEPTION_TO_STATUS_MAP.put(Throwable.class, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    /**
+     * Registers a mapping only when the exception type is on the classpath. Used for optional dependencies
+     * (Servlet/Spring MVC, Spring Security, JPA, Bean Validation, JAX-RS) so that loading this class never
+     * fails with {@link NoClassDefFoundError} in applications that do not use them.
+     */
+    @SuppressWarnings("unchecked")
+    private static void putIfPresent(String className, HttpStatus value) {
+        try {
+            Class<?> type = Class.forName(className, false, HttpStatusMapper.class.getClassLoader());
+            if (Throwable.class.isAssignableFrom(type)) {
+                EXCEPTION_TO_STATUS_MAP.put((Class<? extends Throwable>) type, value);
+            }
+        } catch (ClassNotFoundException | LinkageError ignored) {
+            // optional dependency absent
+        }
     }
 
     private HttpStatusMapper() {

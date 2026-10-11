@@ -2,7 +2,6 @@ package es.bluesolution.rop.spring;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +15,6 @@ import java.time.LocalDateTime;
     name = "ErrorResponse",
     description = "Standard error response for all API endpoints"
 )
-@Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record ErrorResponse(
         @Schema(
@@ -91,5 +89,52 @@ public record ErrorResponse(
                 .timestamp(LocalDateTime.now())
                 .exceptionType(exception != null ? exception.getClass().getSimpleName() : null)
                 .build();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Fluent builder for {@link ErrorResponse}.
+     */
+    public static final class Builder {
+        private String code;
+        private String message;
+        private LocalDateTime timestamp;
+        private String stackTrace;
+        private String exceptionType;
+
+        private Builder() {
+        }
+
+        public Builder code(String code) {
+            this.code = code;
+            return this;
+        }
+
+        public Builder message(String message) {
+            this.message = message;
+            return this;
+        }
+
+        public Builder timestamp(LocalDateTime timestamp) {
+            this.timestamp = timestamp;
+            return this;
+        }
+
+        public Builder stackTrace(String stackTrace) {
+            this.stackTrace = stackTrace;
+            return this;
+        }
+
+        public Builder exceptionType(String exceptionType) {
+            this.exceptionType = exceptionType;
+            return this;
+        }
+
+        public ErrorResponse build() {
+            return new ErrorResponse(code, message, timestamp, stackTrace, exceptionType);
+        }
     }
 }

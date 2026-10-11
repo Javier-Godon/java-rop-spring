@@ -7,28 +7,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.HttpMediaTypeNotAcceptableException;
-import org.springframework.web.HttpMediaTypeNotSupportedException;
-import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.MissingRequestHeaderException;
-import org.springframework.web.bind.MissingServletRequestParameterException;
-import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
-import org.springframework.web.servlet.NoHandlerFoundException;
 
-import jakarta.persistence.EntityNotFoundException;
-import jakarta.persistence.PersistenceException;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.ws.rs.NotAuthorizedException;
-import jakarta.ws.rs.NotFoundException;
 
 import org.jspecify.annotations.Nullable;
 
@@ -79,39 +64,39 @@ public final class ExceptionToErrorCodeMapper {
 
         // ---- Spring Web/MVC: Validation errors ----
         EXCEPTION_MAPPINGS.put(MethodArgumentNotValidException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(ConstraintViolationException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("jakarta.validation.ConstraintViolationException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
         EXCEPTION_MAPPINGS.put(HttpMessageNotReadableException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(MissingServletRequestParameterException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(MissingRequestHeaderException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(ServletRequestBindingException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(HttpMediaTypeNotSupportedException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(HttpMediaTypeNotAcceptableException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
-        EXCEPTION_MAPPINGS.put(HttpRequestMethodNotSupportedException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.bind.MissingServletRequestParameterException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.bind.MissingRequestHeaderException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.bind.ServletRequestBindingException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.HttpMediaTypeNotSupportedException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.HttpMediaTypeNotAcceptableException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
+        putIfPresent("org.springframework.web.HttpRequestMethodNotSupportedException", FailureResultDescription.ErrorCode.VALIDATION_ERROR);
 
         // ---- Spring Web/MVC: Not found ----
-        EXCEPTION_MAPPINGS.put(NoHandlerFoundException.class, FailureResultDescription.ErrorCode.NOT_FOUND);
+        putIfPresent("org.springframework.web.servlet.NoHandlerFoundException", FailureResultDescription.ErrorCode.NOT_FOUND);
 
         // ---- Spring WebFlux ----
         EXCEPTION_MAPPINGS.put(ServerWebInputException.class, FailureResultDescription.ErrorCode.VALIDATION_ERROR);
 
         // ---- Spring Security: Authentication and authorization ----
-        EXCEPTION_MAPPINGS.put(AuthenticationException.class, FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
-        EXCEPTION_MAPPINGS.put(BadCredentialsException.class, FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
-        EXCEPTION_MAPPINGS.put(AccessDeniedException.class, FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
+        putIfPresent("org.springframework.security.core.AuthenticationException", FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
+        putIfPresent("org.springframework.security.authentication.BadCredentialsException", FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
+        putIfPresent("org.springframework.security.access.AccessDeniedException", FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
 
         // ---- JPA/Hibernate: Not found cases ----
-        EXCEPTION_MAPPINGS.put(EntityNotFoundException.class, FailureResultDescription.ErrorCode.NOT_FOUND);
+        putIfPresent("jakarta.persistence.EntityNotFoundException", FailureResultDescription.ErrorCode.NOT_FOUND);
         EXCEPTION_MAPPINGS.put(EmptyResultDataAccessException.class, FailureResultDescription.ErrorCode.NOT_FOUND);
 
         // ---- JPA/Hibernate: Database operations ----
         EXCEPTION_MAPPINGS.put(DataAccessException.class, FailureResultDescription.ErrorCode.DATABASE_ERROR);
-        EXCEPTION_MAPPINGS.put(PersistenceException.class, FailureResultDescription.ErrorCode.DATABASE_ERROR);
+        putIfPresent("jakarta.persistence.PersistenceException", FailureResultDescription.ErrorCode.DATABASE_ERROR);
         EXCEPTION_MAPPINGS.put(DataIntegrityViolationException.class, FailureResultDescription.ErrorCode.BUSINESS_RULE_ERROR);
         EXCEPTION_MAPPINGS.put(DuplicateKeyException.class, FailureResultDescription.ErrorCode.BUSINESS_RULE_ERROR);
 
         // ---- JAX-RS: Web services ----
-        EXCEPTION_MAPPINGS.put(NotAuthorizedException.class, FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
-        EXCEPTION_MAPPINGS.put(NotFoundException.class, FailureResultDescription.ErrorCode.NOT_FOUND);
+        putIfPresent("jakarta.ws.rs.NotAuthorizedException", FailureResultDescription.ErrorCode.AUTHENTICATION_ERROR);
+        putIfPresent("jakarta.ws.rs.NotFoundException", FailureResultDescription.ErrorCode.NOT_FOUND);
 
         // ---- Spring HTTP Clients: External service calls ----
         EXCEPTION_MAPPINGS.put(HttpClientErrorException.class, FailureResultDescription.ErrorCode.EXTERNAL_SERVICE_ERROR);
@@ -121,6 +106,23 @@ public final class ExceptionToErrorCodeMapper {
         // ---- Top-level fallbacks (should be last due to inheritance hierarchy) ----
         EXCEPTION_MAPPINGS.put(RuntimeException.class, FailureResultDescription.ErrorCode.UNKNOWN_ERROR);
         EXCEPTION_MAPPINGS.put(Exception.class, FailureResultDescription.ErrorCode.UNKNOWN_ERROR);
+    }
+
+    /**
+     * Registers a mapping only when the exception type is on the classpath. Used for optional dependencies
+     * (Servlet/Spring MVC, Spring Security, JPA, Bean Validation, JAX-RS) so that loading this class never
+     * fails with {@link NoClassDefFoundError} in applications that do not use them.
+     */
+    @SuppressWarnings("unchecked")
+    private static void putIfPresent(String className, FailureResultDescription.ErrorCode value) {
+        try {
+            Class<?> type = Class.forName(className, false, ExceptionToErrorCodeMapper.class.getClassLoader());
+            if (Exception.class.isAssignableFrom(type)) {
+                EXCEPTION_MAPPINGS.put((Class<? extends Exception>) type, value);
+            }
+        } catch (ClassNotFoundException | LinkageError ignored) {
+            // optional dependency absent
+        }
     }
 
     private ExceptionToErrorCodeMapper() {

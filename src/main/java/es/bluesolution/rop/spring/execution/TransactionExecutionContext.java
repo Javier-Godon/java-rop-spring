@@ -1,13 +1,14 @@
 package es.bluesolution.rop.spring.execution;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import es.bluesolution.rop.core.execution.NoOpExecutionContext;
 
 import es.bluesolution.rop.core.execution.ExecutionContext;
 
 import es.bluesolution.rop.core.FailureResultDescription;
 import es.bluesolution.rop.core.Result;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.jspecify.annotations.NullMarked;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
@@ -58,11 +59,15 @@ import java.util.function.Supplier;
  * @see NoOpExecutionContext for testing without transactions
  */
 @NullMarked
-@RequiredArgsConstructor
-@Slf4j
 public class TransactionExecutionContext implements ExecutionContext {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionExecutionContext.class);
     
     private final TransactionTemplate transactionTemplate;
+
+    public TransactionExecutionContext(TransactionTemplate transactionTemplate) {
+        this.transactionTemplate = transactionTemplate;
+    }
     
     /**
      * Alternative constructor using PlatformTransactionManager (more explicit).
